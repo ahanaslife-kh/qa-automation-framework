@@ -82,6 +82,15 @@ class BusResultsPage(BasePage):
             except:
                 continue
 
+    def continue_button_clickable(self):
+        try:
+            WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable(self.CONTINUE_BTN)
+            )
+            return True
+        except:
+            return False
+
     def select_boarding_point(self):
         options = WebDriverWait(self.driver, 30).until(
             EC.presence_of_all_elements_located(self.BOARDING_OPTIONS)

@@ -156,3 +156,22 @@ def test_complete_flow_with_filters(driver):
     results.select_dropping_point()
     results.click_continue()
     assert True
+
+def test_negative_01_continue_without_seat(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+
+    results.select_boarding_point()
+    results.select_dropping_point()
+
+    assert not results.continue_button_clickable()
+
+def test_negative_02_boarding_without_seat(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+
+    results.select_boarding_point()
+
+    assert not results.continue_button_clickable()
