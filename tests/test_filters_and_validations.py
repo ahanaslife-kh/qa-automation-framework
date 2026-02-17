@@ -12,119 +12,147 @@ def open_results(driver):
 
     return BusResultsPage(driver)
 
-    # results = BusResultsPage(driver)
-    # results.sort_by_price()
-    #
-    # assert results.results_visible()
 
-    # ---------- Basic flow tests ----------
+# ---------- Basic flow tests ----------
 
-    def test_01_search_results_load(driver):
-        results = open_results(driver)
-        assert results.sort_by_price is not None
+def test_search_results_load(driver):
+    results = open_results(driver)
+    assert results.results_visible(), "Results not visible"
 
-    def test_02_sort_by_price_clickable(driver):
-        results = open_results(driver)
-        results.sort_by_price()
-        assert True
 
-    def test_03_sort_by_departure_clickable(driver):
-        results = open_results(driver)
-        results.sort_by_departure()
-        assert True
+def test_sort_by_price_clickable(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    assert True
 
-    def test_04_ac_filter_clickable(driver):
-        results = open_results(driver)
-        results.apply_ac_filter()
-        assert True
 
-    def test_05_sleeper_filter_clickable(driver):
-        results = open_results(driver)
-        results.apply_sleeper_filter()
-        assert True
+def test_sort_by_departure_clickable(driver):
+    results = open_results(driver)
+    results.sort_by_departure()
+    assert True
 
-    def test_06_sort_price_then_ac(driver):
-        results = open_results(driver)
-        results.sort_by_price()
-        results.apply_ac_filter()
-        assert True
 
-    def test_07_sort_departure_then_ac(driver):
-        results = open_results(driver)
-        results.sort_by_departure()
-        results.apply_ac_filter()
-        assert True
+def test_ac_filter_clickable(driver):
+    results = open_results(driver)
+    results.apply_ac_filter()
+    assert True
 
-    def test_08_multiple_filters(driver):
-        results = open_results(driver)
-        results.apply_ac_filter()
-        results.apply_sleeper_filter()
-        assert True
 
-    def test_09_sort_twice(driver):
-        results = open_results(driver)
-        results.sort_by_price()
-        results.sort_by_departure()
-        assert True
+def test_sort_price_then_ac(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.apply_ac_filter()
+    assert True
 
-    def test_10_apply_ac_after_sort(driver):
-        results = open_results(driver)
-        results.sort_by_price()
-        results.apply_ac_filter()
-        assert True
 
-    # ---------- Seat flow tests ----------
+# ---------- Seat flow helper ----------
 
-    def open_seat_flow(driver):
-        results = open_results(driver)
-        results.sort_by_price()
-        results.select_bhaiya_bus()
-        return results
+def open_seat_flow(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+    results.select_any_available_seat()
+    results.select_boarding_point()
+    results.select_dropping_point()
+    return results
 
-    def test_11_select_bhaiya_bus(driver):
-        results = open_seat_flow(driver)
-        assert True
 
-    def test_12_show_seats_opens(driver):
-        results = open_seat_flow(driver)
-        assert results.seats_visible()
+# ---------- Seat flow tests ----------
 
-    def test_13_seat_layout_visible(driver):
-        results = open_seat_flow(driver)
-        assert results.seats_visible()
+def test_seat_layout_visible(driver):
+    results = open_seat_flow(driver)
+    assert results.seats_visible()
 
-    def test_14_select_seat_u15(driver):
-        results = open_seat_flow(driver)
-        results.select_seat_u15()
-        assert True
 
-    def test_15_boarding_points_visible(driver):
-        results = open_seat_flow(driver)
-        assert results.boarding_points_visible()
+def test_continue_button_visible(driver):
+    results = open_seat_flow(driver)
+    assert results.continue_button_visible()
 
-    def test_16_select_kashmiri_gate(driver):
-        results = open_seat_flow(driver)
-        results.select_kashmiri_gate()
-        assert True
 
-    def test_17_select_transport_nagar(driver):
-        results = open_seat_flow(driver)
-        results.select_transport_nagar()
-        assert True
+def test_continue_button_clickable(driver):
+    results = open_seat_flow(driver)
+    results.click_continue()
+    assert True
 
-    def test_18_continue_button_visible(driver):
-        results = open_seat_flow(driver)
-        assert results.continue_button_visible()
 
-    def test_19_continue_button_clickable(driver):
-        results = open_seat_flow(driver)
-        results.click_continue()
-        assert True
+def test_full_booking_flow(driver):
+    results = open_seat_flow(driver)
+    results.click_continue()
+    assert True
 
-    def test_20_full_booking_flow(driver):
-        results = open_seat_flow(driver)
-        results.select_seat_u15()
-        results.select_kashmiri_gate()
-        results.select_transport_nagar()
-        results.click_continue()
-        assert True
+# ---------- Additional stability & validation tests ----------
+
+def test_sort_price_then_departure(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.sort_by_departure()
+    assert True
+
+
+def test_apply_ac_filter_twice(driver):
+    results = open_results(driver)
+    results.apply_ac_filter()
+    results.apply_ac_filter()
+    assert True
+
+
+def test_results_visible_after_filter(driver):
+    results = open_results(driver)
+    results.apply_ac_filter()
+    assert results.results_visible()
+
+
+def test_open_first_bus_after_sort(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+    assert results.seats_visible()
+
+
+def test_select_any_available_seat(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+    results.select_any_available_seat()
+    assert True
+
+
+def test_boarding_point_after_seat_selection(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+    results.select_any_available_seat()
+    results.select_boarding_point()
+    assert True
+
+
+def test_dropping_point_after_boarding(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+    results.select_any_available_seat()
+    results.select_boarding_point()
+    results.select_dropping_point()
+    assert True
+
+
+def test_continue_enabled_after_full_selection(driver):
+    results = open_results(driver)
+    results.sort_by_price()
+    results.click_show_seats()
+    results.select_any_available_seat()
+    results.select_boarding_point()
+    results.select_dropping_point()
+    assert results.continue_button_visible()
+
+
+def test_complete_flow_with_filters(driver):
+    results = open_results(driver)
+    results.apply_ac_filter()
+    results.sort_by_price()
+    results.click_show_seats()
+    results.select_any_available_seat()
+    results.select_boarding_point()
+    results.select_dropping_point()
+    results.click_continue()
+    assert True

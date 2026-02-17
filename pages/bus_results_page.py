@@ -126,6 +126,15 @@ class BusResultsPage(BasePage):
 
         self.driver.execute_script("arguments[0].click();", btn)
 
+    def continue_button_visible(self):
+        try:
+            WebDriverWait(self.driver, 20).until(
+                EC.visibility_of_element_located(self.CONTINUE_BTN)
+            )
+            return True
+        except:
+            return False
+
     def sort_by_departure(self):
         self.click_element(self.SORT_DEPARTURE)
 
