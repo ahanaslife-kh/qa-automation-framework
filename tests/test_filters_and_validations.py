@@ -145,7 +145,6 @@ def test_continue_enabled_after_full_selection(driver):
     results.select_dropping_point()
     assert results.continue_button_visible()
 
-
 def test_complete_flow_with_filters(driver):
     results = open_results(driver)
     results.apply_ac_filter()
