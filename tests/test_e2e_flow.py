@@ -1,10 +1,8 @@
-import time
 from pages.home_page import HomePage
 from pages.bus_results_page import BusResultsPage
 
 def test_bus_search_e2e(driver):
     driver.get("https://www.ixigo.com/buses")
-    # time.sleep(3)
 
     home = HomePage(driver)
     home.close_login_popup_if_present()

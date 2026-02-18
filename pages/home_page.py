@@ -1,11 +1,12 @@
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
+from utils.logger import get_logger
+logger = get_logger()
 from utils.wait_utils import wait_for_visibility, wait_for_clickable
-from selenium.common.exceptions import TimeoutException
-import time
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, ElementClickInterceptedException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException
+
 
 class HomePage(BasePage):
 
@@ -16,29 +17,28 @@ class HomePage(BasePage):
     def remove_popup_overlay(self):
         """Force remove any login overlay"""
         self.driver.execute_script("""
-               let backdrop = document.querySelector('.abrs-backdrop');
-               if (backdrop) backdrop.remove();
+            let backdrop = document.querySelector('.abrs-backdrop');
+            if (backdrop) backdrop.remove();
 
-               let iframe = document.querySelector('#sso-frame');
-               if (iframe) iframe.remove();
-           """)
+            let iframe = document.querySelector('#sso-frame');
+            if (iframe) iframe.remove();
+        """)
 
     def select_city(self, locator, city):
-        input_box = wait_for_visibility(self.driver, locator)
+        input_box = self.wait_for_visibility(locator)
         input_box.clear()
         input_box.send_keys(city)
 
-        for _ in range(5):  # retry logic
+        suggestion_locator = (By.XPATH, f"//li[contains(.,'{city}')]")
+
+        for _ in range(3):  # retry logic without sleep
             try:
-                suggestion = wait_for_visibility(
-                    self.driver,
-                    (By.XPATH, f"//li[contains(.,'{city}')]"),
-                    timeout=10
-                )
+                suggestion = wait_for_clickable(self.driver, suggestion_locator, timeout=10)
                 suggestion.click()
                 return
-            except (StaleElementReferenceException, ElementClickInterceptedException):
-                time.sleep(1)
+            except (StaleElementReferenceException, ElementClickInterceptedException, TimeoutException):
+                # retry automatically without sleep
+                continue
 
         raise Exception("City suggestion not clickable")
 

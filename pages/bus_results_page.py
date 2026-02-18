@@ -147,8 +147,6 @@ class BusResultsPage(BasePage):
     def sort_by_departure(self):
         self.click_element(self.SORT_DEPARTURE)
 
-    # def apply_sleeper_filter(self):
-    #     self.click_element(self.SLEEPER_FILTER)
 
     def seats_visible(self):
         try:
