@@ -25,7 +25,6 @@ def test_complete_train_e2e_flow(driver):
     result.select_quota("General")
     result.select_quota_date_and_book("28")
     result.close_login()
-    time.sleep(100)
 
     pnr = TrainPNRPage(driver)
     pnr.redirect_to_trains()
