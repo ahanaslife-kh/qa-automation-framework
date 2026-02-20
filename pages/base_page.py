@@ -3,7 +3,7 @@ import time
 from selenium.common import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
+
 
 from utils.logger import get_logger
 
@@ -14,9 +14,7 @@ class BasePage:
         self.driver = driver
         self.wait = WebDriverWait(driver, 15)
         self.logger = get_logger(self.__class__.__name__)
-    # ----------------------------
-    # BASIC ELEMENT ACTIONS
-    # ----------------------------
+
 
     def click_element(self, locator):
         self.logger.info(f"Clicking element: {locator}")
@@ -41,10 +39,6 @@ class BasePage:
         self.wait.until(EC.visibility_of_element_located(locator))
         return True
 
-    # ----------------------------
-    # WAIT HELPERS
-    # ----------------------------
-
     def wait_for_presence(self, locator):
         self.logger.info(f"Waiting for presence of {locator}")
         return self.wait.until(
@@ -57,9 +51,7 @@ class BasePage:
             EC.element_to_be_clickable(locator)
         )
 
-    # ----------------------------
-    # FIND MULTIPLE ELEMENTS
-    # ----------------------------
+
 
     def get_elements(self, locator):
         self.logger.info(f"Getting elements from {locator}")
@@ -67,21 +59,11 @@ class BasePage:
             EC.presence_of_all_elements_located(locator)
         )
 
-    # ----------------------------
-    # SCROLLING
-    # ----------------------------
 
     def scroll_into_view(self, locator):
-        """
-        Ensure element becomes visible by scrolling.
-        No re-centering scroll once found.
-        """
         self.logger.info(f"Scrolling {locator}")
         self.scroll_until_element_visible(locator)
         time.sleep(1)
-    # ----------------------------
-    # DROPDOWN / AUTOSUGGEST SELECT
-    # ----------------------------
 
     def select_from_list_by_text(self, locator, text):
         elements = self.get_elements(locator)
@@ -94,9 +76,6 @@ class BasePage:
                 return True
         return False
 
-    # ----------------------------
-    # VALIDATION HELPERS
-    # ----------------------------
 
     def is_text_present_on_page(self, text):
         self.logger.info(f"Checking text '{text}' exists")
@@ -110,17 +89,14 @@ class BasePage:
             return False
 
     def scroll_until_element_visible(self, locator, max_scrolls=10):
-        """
-        Scroll page gradually until element becomes visible.
-        Stops immediately once found.
-        """
+
         self.logger.info(f"Scrolling until element visible: {locator}")
         for _ in range(max_scrolls):
             try:
                 element = self.wait.until(
                     EC.visibility_of_element_located(locator)
                 )
-                return element  # Found → stop scrolling
+                return element
             except:
                 self.driver.execute_script("window.scrollBy(0, 500);")
                 time.sleep(1)

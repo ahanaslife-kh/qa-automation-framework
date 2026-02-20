@@ -4,7 +4,6 @@ from pages.base_page import BasePage
 
 class TrainPNRPage(BasePage):
 
-    # ---------------- LOCATORS ----------------
 
     SUBMENU_OPTIONS = (
         By.CSS_SELECTOR,
@@ -28,7 +27,6 @@ class TrainPNRPage(BasePage):
         "div.mainContainer>div a[href='/trains']"
     )
 
-    # ---------------- ACTIONS ----------------
 
     def navigate_to_pnr_section(self):
         self.logger.info("Navigating to PNR section")

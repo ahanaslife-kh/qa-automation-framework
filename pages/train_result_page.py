@@ -6,7 +6,6 @@ from pages.base_page import BasePage
 
 class TrainResultPage(BasePage):
 
-    # ---------------- LOCATORS ----------------
 
     RESULT_DATES = (
         By.XPATH,
@@ -30,7 +29,7 @@ class TrainResultPage(BasePage):
     RESULTS_SECTION = (By.ID, "train-card-list")
     LOGIN_CROSS=(By.CSS_SELECTOR,"div[role='dialog']>div svg[data-testid='CloseIcon']")
 
-    # ---------------- ACTIONS ----------------
+
 
     def select_result_date(self, date_text):
         self.logger.info(f"Selecting result date: {date_text}")

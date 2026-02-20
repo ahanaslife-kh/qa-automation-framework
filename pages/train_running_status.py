@@ -4,7 +4,7 @@ from pages.base_page import BasePage
 
 class TrainRunningStatusPage(BasePage):
 
-    # ---------------- LOCATORS ----------------
+
 
     SUBMENU_OPTIONS = (
         By.CSS_SELECTOR,
@@ -30,7 +30,6 @@ class TrainRunningStatusPage(BasePage):
         "div.mainContainer>div a[href='/trains']"
     )
 
-    # ---------------- ACTIONS ----------------
 
     def navigate_to_running_status(self):
         self.logger.info("Navigating to Running Status section")

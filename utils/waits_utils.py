@@ -22,13 +22,6 @@ def retry_click(element, retries=3, delay=1):
     return False
 
 
-# --------------------------------------------------
-# Simple static wait (rarely used)
-# --------------------------------------------------
 
 def wait_seconds(seconds):
-    """
-    Explicitly waits for given seconds.
-    Use only when unavoidable.
-    """
     time.sleep(seconds)

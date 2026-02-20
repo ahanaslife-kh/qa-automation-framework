@@ -5,10 +5,6 @@ from utils.driver_factory import get_driver
 from utils.screenshot_utils import take_screenshot
 
 
-# ----------------------------
-# BROWSER SETUP & TEARDOWN
-# ----------------------------
-
 @pytest.fixture(scope="function")
 def driver():
     driver = get_driver()
@@ -20,10 +16,6 @@ def driver():
     yield driver
     driver.quit()
 
-
-# ----------------------------
-# SCREENSHOT ON FAILURE
-# ----------------------------
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item):

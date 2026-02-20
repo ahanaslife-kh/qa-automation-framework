@@ -4,7 +4,6 @@ from pages.base_page import BasePage
 
 class TrainHomePage(BasePage):
 
-    # ---------------- LOCATORS ----------------
 
     TRAINS_TAB = (By.CSS_SELECTOR, "div.mainContainer>div>div:nth-child(2) a[href='/trains']")
 
@@ -34,7 +33,7 @@ class TrainHomePage(BasePage):
 
     SUGGESTIONS = (By.CSS_SELECTOR, "div[role='listitem']")
 
-    # ---------------- ACTIONS ----------------
+
 
     def open_trains_module(self):
         self.logger.info(f"Opening train module: {self.TRAINS_TAB}")
