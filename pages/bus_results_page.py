@@ -61,26 +61,62 @@ class BusResultsPage(BasePage):
         self.click_element(self.AC_FILTER)
 
     def click_show_seats(self):
-        btn = WebDriverWait(self.driver, 30).until(
-            EC.element_to_be_clickable(self.FIRST_SHOW_SEATS)
+        buttons = WebDriverWait(self.driver, 30).until(
+            EC.presence_of_all_elements_located((By.XPATH, "//button[contains(.,'Show Seats')]"))
         )
-        self.driver.execute_script("arguments[0].click();", btn)
+
+        for btn in buttons:
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
+
+                WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable(btn)
+                )
+
+                self.driver.execute_script("arguments[0].click();", btn)
+
+                #  wait for seat layout to load
+                WebDriverWait(self.driver, 20).until(
+                    EC.presence_of_element_located(self.SEAT_CONTAINER)
+                )
+
+                print(" Show seats clicked")
+                return
+
+            except:
+                continue
+
+        raise Exception(" No bus found to open seats")
 
     def select_any_available_seat(self):
-        seats = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_all_elements_located(self.AVAILABLE_SEATS)
-        )
-
-        for seat in seats:
+        for i in range(5):
             try:
-                self.driver.execute_script("arguments[0].scrollIntoView(true);", seat)
+                seats = WebDriverWait(self.driver, 20).until(
+                    EC.presence_of_all_elements_located(self.AVAILABLE_SEATS)
+                )
+
+                if len(seats) == 0:
+                    continue
+
+                seat = seats[0]  #  ONLY FIRST SEAT
+
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", seat
+                )
+
                 WebDriverWait(self.driver, 5).until(
                     EC.element_to_be_clickable(seat)
                 )
+
                 self.driver.execute_script("arguments[0].click();", seat)
-                break
-            except:
-                continue
+
+                print(" Seat selected")
+                return
+
+            except Exception as e:
+                print(f"Retry seat selection {i + 1}: {e}")
+
+        raise Exception(" Seat not selected")
 
     def continue_button_clickable(self):
         try:
@@ -92,48 +128,91 @@ class BusResultsPage(BasePage):
             return False
 
     def select_boarding_point(self):
-        options = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_all_elements_located(self.BOARDING_OPTIONS)
-        )
-
-        for opt in options:
-            try:
-                self.driver.execute_script("arguments[0].scrollIntoView(true);", opt)
-                WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable(opt)
+        try:
+            # If already selected (card visible)
+            selected = WebDriverWait(self.driver, 10).until(
+                EC.visibility_of_element_located(
+                    (By.XPATH, "//div[contains(text(),'Boarding Point')]")
                 )
-                self.driver.execute_script("arguments[0].click();", opt)
-                break
-            except:
-                continue
+            )
+            print("Boarding already selected")
+            return
+
+        except:
+            print(" Boarding not auto-selected, trying manual selection")
+
+        # fallback (if checkbox UI appears)
+        try:
+            options = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_all_elements_located((
+                    By.XPATH, "//input[@type='checkbox']"
+                ))
+            )
+
+            if options:
+                self.driver.execute_script("arguments[0].click();", options[0])
+                print("Boarding selected manually")
+
+        except:
+            raise Exception("Boarding not found")
 
     def select_dropping_point(self):
-        options = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_all_elements_located(self.DROPPING_OPTIONS)
-        )
-
-        for opt in options:
-            try:
-                self.driver.execute_script("arguments[0].scrollIntoView(true);", opt)
-                WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable(opt)
+        try:
+            # Check if already selected
+            selected = WebDriverWait(self.driver, 10).until(
+                EC.visibility_of_element_located(
+                    (By.XPATH, "//div[contains(text(),'Dropping Point')]")
                 )
-                self.driver.execute_script("arguments[0].click();", opt)
-                break
-            except:
-                continue
+            )
+            print("Dropping already selected")
+            return
+
+        except:
+            print(" Dropping not auto-selected, trying manual")
+
+        # fallback (only if checkbox UI appears)
+        try:
+            options = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_all_elements_located((
+                    By.XPATH, "//input[@type='checkbox']"
+                ))
+            )
+
+            if options:
+                self.driver.execute_script("arguments[0].click();", options[0])
+                print(" Dropping selected manually")
+
+        except:
+            raise Exception(" Dropping not found")
 
     def click_continue(self):
-        btn = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(self.CONTINUE_BTN)
-        )
-        self.driver.execute_script("arguments[0].scrollIntoView(true);", btn)
 
-        WebDriverWait(self.driver, 20).until(
-            EC.element_to_be_clickable(self.CONTINUE_BTN)
-        )
+        for i in range(5):
+            try:
+                btn = WebDriverWait(self.driver, 20).until(
+                    EC.presence_of_element_located(self.CONTINUE_BTN)
+                )
 
-        self.driver.execute_script("arguments[0].click();", btn)
+                # Scroll properly
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block:'center'});", btn
+                )
+
+                # Small wait for React render (IMPORTANT)
+                WebDriverWait(self.driver, 2).until(
+                    lambda d: btn.is_displayed()
+                )
+
+                # FORCE CLICK (bypass all Selenium checks)
+                self.driver.execute_script("arguments[0].click();", btn)
+
+                print("Continue clicked")
+                return
+
+            except Exception as e:
+                print(f"Retry continue click {i + 1}: {e}")
+
+        raise Exception("Continue button click failed")
 
     def continue_button_visible(self):
         try:
