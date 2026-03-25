@@ -5,6 +5,8 @@ import pytest
 from utils.driver_factory import  DriverFactory
 import yaml
 
+from utils.driver_factory import get_driver
+from utils.screenshot_utils import take_screenshot
 def load_config():
     with open("config.yaml", "r") as file:
         return yaml.safe_load(file)
@@ -15,7 +17,12 @@ def config():
 
 @pytest.fixture(scope="function")
 def driver():
-    driver = DriverFactory.get_driver()
+    driver = get_driver()
+    # Load base URL from config
+    with open("config/config.yaml") as f:
+        config = yaml.safe_load(f)
+
+    driver.get(config["base_url"])
     yield driver
     driver.quit()
 
@@ -26,6 +33,7 @@ def pytest_runtest_makereport(item, call):
     if rep.when == "call" and rep.failed:
         driver = item.funcargs.get("driver", None)
         if driver:
+            take_screenshot(driver, item.name)
             try:
                 if not os.path.exists("screenshots"):
                     os.makedirs("screenshots")
