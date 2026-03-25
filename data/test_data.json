@@ -36,5 +36,13 @@
     "category": "General",
     "pnr": "1234567890",
     "train_number": "12312"
+  },
+    {
+    "from_city": "Delhi",
+    "to_city": "Jaipur"
+  },
+  {
+    "from_city": "Bangalore",
+    "to_city": "Chennai"
   }
 ]
