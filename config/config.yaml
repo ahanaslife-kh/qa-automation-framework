@@ -2,3 +2,4 @@ browser: chrome
 base_url: https://www.ixigo.com/
 implicit_wait: 5
 explicit_wait: 10
+wait: 15

@@ -17,3 +17,4 @@ def get_driver():
     driver = webdriver.Chrome(service=service, options=options)
 
     driver.implicitly_wait(config["implicit_wait"])
+    return driver
