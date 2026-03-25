@@ -1,9 +1,11 @@
 import time
 from selenium.common import StaleElementReferenceException, ElementClickInterceptedException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
 from utils.logger import get_logger
+
+
 class BasePage:
 
     def __init__(self, driver):
@@ -11,120 +13,128 @@ class BasePage:
         self.wait = WebDriverWait(driver, 15)
         self.logger = get_logger(self.__class__.__name__)
 
-    def click(self, locator):
+    # ---------- CLICK ----------
+
+    def click_element(self, locator):
         for attempt in range(3):
             try:
-                element = self.wait.until(EC.presence_of_element_located(locator))
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});",element)
-                self.wait.until(EC.element_to_be_clickable(locator))
+                element = self.wait.until(EC.element_to_be_clickable(locator))
+
+                self.driver.execute_script(
+                    "arguments[0].scrollIntoView({block: 'center'});", element
+                )
+
+                self.logger.info(f"Clicking element: {locator}")
+
                 try:
                     element.click()
                 except ElementClickInterceptedException:
-                    print("Normal click failed, using JS click fallback")
-                    self.driver.execute_script("arguments[0].click();",element)
-                return
-            except StaleElementReferenceException:
-                print("Retrying click due to stale element...")
-                time.sleep(1)
-        raise Exception(f"Unable to click element after retries: {locator}")
+                    self.logger.warning("Using JS click fallback")
+                    self.driver.execute_script("arguments[0].click();", element)
 
-    def type(self, locator, text):
+                return
+
+            except StaleElementReferenceException:
+                self.logger.warning("Retrying click due to stale element...")
+                time.sleep(1)
+
+        raise Exception(f"Unable to click element: {locator}")
+
+    # ---------- INPUT ----------
+
+    def enter_text(self, locator, value):
         for attempt in range(3):
             try:
-                element = self.wait.until( EC.visibility_of_element_located(locator))
+                element = self.wait.until(EC.visibility_of_element_located(locator))
+                self.logger.info(f"Entering text '{value}' into {locator}")
                 element.clear()
-                element.send_keys(text)
+                element.send_keys(value)
                 return
+
             except StaleElementReferenceException:
-                print("Retrying send_keys due to stale element...")
+                self.logger.warning("Retrying send_keys...")
                 time.sleep(1)
-        raise Exception(f"Unable to enter text after retries: {locator}")
 
-    def wait_for(self, locator):
-        return self.wait.until( EC.visibility_of_element_located(locator))
-    def click_element(self, locator):
-        self.logger.info(f"Clicking element: {locator}")
-        self.wait.until(EC.element_to_be_clickable(locator)).click()
-        time.sleep(2)
+        raise Exception(f"Unable to enter text: {locator}")
 
-    def enter_text(self, locator, text):
-        self.logger.info(f"Entering text '{text}' into {locator}")
-        element = self.wait.until(EC.visibility_of_element_located(locator))
-        element.clear()
-        element.send_keys(text)
-        time.sleep(1)
+    # ---------- WAITS ----------
 
-    def get_text(self, locator):
-        self.logger.info(f"Getting text from {locator}")
-        return self.wait.until(
-            EC.visibility_of_element_located(locator)
-        ).text
-
-    def is_visible(self, locator):
-        self.logger.info(f"Checking visibility of {locator}")
-        self.wait.until(EC.visibility_of_element_located(locator))
-        return True
+    def wait_for_element(self, locator):
+        self.logger.info(f"Waiting for visibility: {locator}")
+        return self.wait.until(EC.visibility_of_element_located(locator))
 
     def wait_for_presence(self, locator):
-        self.logger.info(f"Waiting for presence of {locator}")
-        return self.wait.until(
-            EC.presence_of_element_located(locator)
-        )
+        return self.wait.until(EC.presence_of_element_located(locator))
 
     def wait_for_clickable(self, locator):
-        self.logger.info(f"Waiting for clickable of {locator}")
-        return self.wait.until(
-            EC.element_to_be_clickable(locator)
-        )
+        return self.wait.until(EC.element_to_be_clickable(locator))
 
+    # ---------- GETTERS ----------
 
+    def get_text(self, locator):
+        return self.wait_for_element(locator).text
 
     def get_elements(self, locator):
-        self.logger.info(f"Getting elements from {locator}")
-        return self.wait.until(
-            EC.presence_of_all_elements_located(locator)
-        )
+        return self.wait.until(EC.presence_of_all_elements_located(locator))
 
+    # ---------- VALIDATIONS ----------
 
-    def scroll_into_view(self, locator):
-        self.logger.info(f"Scrolling {locator}")
-        self.scroll_until_element_visible(locator)
-        time.sleep(1)
-
-    def select_from_list_by_text(self, locator, text):
-        elements = self.get_elements(locator)
-        self.logger.info(f"Selecting text '{text}' into {locator}")
-        for el in elements:
-            if text in el.text:
-                el.click()
-                self.logger.info(f"Clicking '{locator}'")
-                time.sleep(2)
-                return True
-        return False
-
-
-    def is_text_present_on_page(self, text):
-        self.logger.info(f"Checking text '{text}' exists")
-        return text in self.driver.page_source
+    def is_visible(self, locator):
+        self.wait_for_element(locator)
+        return True
 
     def is_element_present(self, locator):
         try:
-            self.wait.until(EC.presence_of_element_located(locator))
+            self.wait_for_presence(locator)
             return True
         except TimeoutException:
             return False
 
-    def scroll_until_element_visible(self, locator, max_scrolls=10):
+    def is_text_present_on_page(self, text):
+        return text in self.driver.page_source
 
-        self.logger.info(f"Scrolling until element visible: {locator}")
+    @staticmethod
+    def validate_text(actual, expected):
+        logger = get_logger()
+        logger.info(f"Validating text. Expected: {expected} | Actual: {actual}")
+        assert expected in actual, f"Expected '{expected}' not found in '{actual}'"
+
+    # ---------- SCROLL ----------
+
+    def scroll_to_element(self, locator):
+        element = self.wait_for_element(locator)
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", element
+        )
+        return element
+
+    def scroll_until_element_visible(self, locator, max_scrolls=10):
         for _ in range(max_scrolls):
             try:
-                element = self.wait.until(
-                    EC.visibility_of_element_located(locator)
-                )
-                return element
+                return self.wait_for_element(locator)
             except:
                 self.driver.execute_script("window.scrollBy(0, 500);")
                 time.sleep(1)
-        self.logger.error(f"Element not found after scrolling: {locator}")
+
         raise Exception(f"Element not found after scrolling: {locator}")
+
+    # ---------- UTILITIES ----------
+
+    def js_click(self, locator):
+        self.logger.warning(f"Using JS click for: {locator}")
+        element = self.wait.until(EC.presence_of_element_located(locator))
+        self.driver.execute_script("arguments[0].click();", element)
+
+    def switch_to_new_tab(self):
+        self.wait.until(lambda d: len(d.window_handles) > 1)
+        self.driver.switch_to.window(self.driver.window_handles[-1])
+
+    def select_from_list_by_text(self, locator, text):
+        elements = self.get_elements(locator)
+
+        for el in elements:
+            if text in el.text:
+                el.click()
+                return True
+
+        return False
