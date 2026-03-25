@@ -1,5 +1,4 @@
 import time
-
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -11,17 +10,9 @@ def test_flight_search(driver):
     wait = WebDriverWait(driver, 15)
     flights = FlightsPage(driver)
     flights.open_flights_tab()
-    wait.until(
-        EC.presence_of_element_located(
-            (By.XPATH, "//span[text()='From']")
-        )
-    )
+    wait.until(EC.presence_of_element_located((By.XPATH, "//span[text()='From']")))
     flights.select_from_city("New Delhi")
-    wait.until(
-        EC.presence_of_element_located(
-            (By.XPATH, "//span[text()='To']")
-        )
-    )
+    wait.until(EC.presence_of_element_located((By.XPATH, "//span[text()='To']")))
     flights.enter_to_city("Mumbai")
     driver.find_element(By.TAG_NAME, "body").click()
     flights.date_pick()
