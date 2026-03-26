@@ -1,0 +1,27 @@
+# Step 2: Write content into it (copy-paste this whole block)
+@"
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.venv/
+
+# Pytest
+.pytest_cache/
+
+# Environment secrets
+.env
+.env.local
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+"@ | Out-File -FilePath ".gitignore" -Encoding utf8
