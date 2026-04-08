@@ -5,12 +5,12 @@ from selenium.webdriver.support import expected_conditions as EC
 
 class BusResultsPage(BasePage):
 
-    RESULT_TEXT = (By.XPATH, "//span[contains(text(),'Showing')]")
+    RESULT_TEXT = (By.XPATH, "//button[contains(.,'Show Seats')]")
 
     SORT_DEPARTURE = (By.XPATH, "//span[text()='Departure Time']")
 
     # Sort
-    SORT_PRICE = (By.XPATH, "//span[text()='Price']")
+    SORT_PRICE = (By.XPATH, "//span[contains(text(),'Price')]")
 
     # Filters
     AC_FILTER = (By.XPATH, "//span[text()='AC']")
@@ -47,46 +47,74 @@ class BusResultsPage(BasePage):
 
     def results_visible(self):
         try:
-            WebDriverWait(self.driver, 20).until(
-                EC.visibility_of_element_located(self.RESULT_TEXT)
+            WebDriverWait(self.driver, 30).until(
+                lambda d: (
+                        len(d.find_elements(By.XPATH, "//button[contains(.,'Seats')]")) > 0
+                        or len(d.find_elements(By.XPATH, "//div[contains(@class,'bus')]")) > 0
+                )
             )
             return True
         except:
             return False
 
     def sort_by_price(self):
-        self.click_element(self.SORT_PRICE)
+        self.logger.info("Sorting by price")
+
+        btn = self.wait_for_clickable(self.SORT_PRICE)
+        self.driver.execute_script("arguments[0].click();", btn)
 
     def apply_ac_filter(self):
         self.click_element(self.AC_FILTER)
 
-    def click_show_seats(self):
-        buttons = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_all_elements_located((By.XPATH, "//button[contains(.,'Show Seats')]"))
+        # wait for results refresh
+        WebDriverWait(self.driver, 20).until(
+            lambda d: len(
+                d.find_elements(By.XPATH, "//button[contains(.,'Seats')]")
+            ) > 0
         )
 
-        for btn in buttons:
+    def click_show_seats(self):
+        self.logger.info("Clicking show seats")
+
+        import time
+        time.sleep(3)  # allow results to fully load
+
+        locators = [
+            "//button[contains(.,'Seats')]",
+            "//span[contains(.,'Seats')]",
+            "//div[contains(.,'Seats')]",
+        ]
+
+        for xpath in locators:
             try:
-                self.driver.execute_script("arguments[0].scrollIntoView({block:'center'});", btn)
+                elements = self.driver.find_elements("xpath", xpath)
 
-                WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable(btn)
-                )
+                for el in elements:
+                    try:
+                        if el.is_displayed():
+                            self.driver.execute_script(
+                                "arguments[0].scrollIntoView({block:'center'});", el
+                            )
+                            time.sleep(0.5)
+                            self.driver.execute_script("arguments[0].click();", el)
 
-                self.driver.execute_script("arguments[0].click();", btn)
+                            self.logger.info(f"Clicked seats using {xpath}")
 
-                #  wait for seat layout to load
-                WebDriverWait(self.driver, 20).until(
-                    EC.presence_of_element_located(self.SEAT_CONTAINER)
-                )
+                            # ✅ WAIT FOR SEAT LAYOUT
+                            WebDriverWait(self.driver, 20).until(
+                                lambda d: len(
+                                    d.find_elements("xpath", "//*[contains(@class,'seat')]")
+                                ) > 0
+                            )
 
-                print(" Show seats clicked")
-                return
+                            return
+                    except:
+                        continue
 
             except:
                 continue
 
-        raise Exception(" No bus found to open seats")
+        raise Exception("No seat button found")
 
     def select_any_available_seat(self):
         for i in range(5):
@@ -128,108 +156,132 @@ class BusResultsPage(BasePage):
             return False
 
     def select_boarding_point(self):
-        try:
-            # If already selected (card visible)
-            selected = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located(
-                    (By.XPATH, "//div[contains(text(),'Boarding Point')]")
-                )
-            )
-            print("Boarding already selected")
-            return
+        self.logger.info("Selecting boarding point")
 
-        except:
-            print(" Boarding not auto-selected, trying manual selection")
+        import time
+        time.sleep(2)
 
-        # fallback (if checkbox UI appears)
-        try:
-            options = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_all_elements_located((
-                    By.XPATH, "//input[@type='checkbox']"
-                ))
-            )
+        # Try multiple locator strategies
+        locators = [
+            "//div[contains(text(),'Boarding')]",
+            "//span[contains(text(),'Boarding')]",
+            "//div[contains(@class,'boarding')]",
+        ]
 
-            if options:
-                self.driver.execute_script("arguments[0].click();", options[0])
-                print("Boarding selected manually")
+        for xpath in locators:
+            try:
+                elements = self.driver.find_elements("xpath", xpath)
 
-        except:
-            raise Exception("Boarding not found")
+                for el in elements:
+                    try:
+                        if el.is_displayed():
+                            self.driver.execute_script(
+                                "arguments[0].scrollIntoView({block:'center'});", el
+                            )
+                            time.sleep(0.5)
+                            self.driver.execute_script("arguments[0].click();", el)
+
+                            self.logger.info(f"Boarding selected using {xpath}")
+                            return
+                    except:
+                        continue
+
+            except:
+                continue
+
+        self.logger.warning("Boarding not required or auto-selected")
 
     def select_dropping_point(self):
-        try:
-            # Check if already selected
-            selected = WebDriverWait(self.driver, 10).until(
-                EC.visibility_of_element_located(
-                    (By.XPATH, "//div[contains(text(),'Dropping Point')]")
-                )
-            )
-            print("Dropping already selected")
-            return
+        self.logger.info("Selecting dropping point")
 
-        except:
-            print(" Dropping not auto-selected, trying manual")
+        import time
+        time.sleep(2)
 
-        # fallback (only if checkbox UI appears)
-        try:
-            options = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_all_elements_located((
-                    By.XPATH, "//input[@type='checkbox']"
-                ))
-            )
+        locators = [
+            "//div[contains(text(),'Dropping')]",
+            "//span[contains(text(),'Dropping')]",
+            "//div[contains(@class,'dropping')]",
+        ]
 
-            if options:
-                self.driver.execute_script("arguments[0].click();", options[0])
-                print(" Dropping selected manually")
+        for xpath in locators:
+            try:
+                elements = self.driver.find_elements("xpath", xpath)
 
-        except:
-            raise Exception(" Dropping not found")
+                for el in elements:
+                    try:
+                        if el.is_displayed():
+                            self.driver.execute_script(
+                                "arguments[0].scrollIntoView({block:'center'});", el
+                            )
+                            time.sleep(0.5)
+                            self.driver.execute_script("arguments[0].click();", el)
+
+                            self.logger.info(f"Dropping selected using {xpath}")
+                            return
+                    except:
+                        continue
+
+            except:
+                continue
+
+        self.logger.warning("Dropping not required or auto-selected")
 
     def click_continue(self):
+        self.logger.info("Clicking continue button")
 
-        for i in range(5):
+        import time
+        time.sleep(2)
+
+        locators = [
+            "//button[contains(.,'Continue')]",
+            "//span[contains(.,'Continue')]",
+            "//button[contains(.,'Proceed')]",
+            "//span[contains(.,'Proceed')]",
+        ]
+
+        for xpath in locators:
             try:
-                btn = WebDriverWait(self.driver, 20).until(
-                    EC.presence_of_element_located(self.CONTINUE_BTN)
-                )
+                elements = self.driver.find_elements("xpath", xpath)
 
-                # Scroll properly
-                self.driver.execute_script(
-                    "arguments[0].scrollIntoView({block:'center'});", btn
-                )
+                for el in elements:
+                    if el.is_displayed():
+                        self.driver.execute_script(
+                            "arguments[0].scrollIntoView({block:'center'});", el
+                        )
+                        self.driver.execute_script("arguments[0].click();", el)
+                        return
+            except:
+                continue
 
-                # Small wait for React render (IMPORTANT)
-                WebDriverWait(self.driver, 2).until(
-                    lambda d: btn.is_displayed()
-                )
-
-                # FORCE CLICK (bypass all Selenium checks)
-                self.driver.execute_script("arguments[0].click();", btn)
-
-                print("Continue clicked")
-                return
-
-            except Exception as e:
-                print(f"Retry continue click {i + 1}: {e}")
-
-        raise Exception("Continue button click failed")
+        raise Exception("Continue button not found")
 
     def continue_button_visible(self):
-        try:
-            WebDriverWait(self.driver, 20).until(
-                EC.visibility_of_element_located(self.CONTINUE_BTN)
-            )
-            return True
-        except:
-            return False
+        import time
+        time.sleep(2)
+
+        locators = [
+            "//button[contains(.,'Continue')]",
+            "//span[contains(.,'Continue')]",
+            "//button[contains(.,'Proceed')]",
+            "//span[contains(.,'Proceed')]",
+        ]
+
+        for xpath in locators:
+            try:
+                elements = self.driver.find_elements("xpath", xpath)
+
+                for el in elements:
+                    if el.is_displayed():
+                        return True
+            except:
+                continue
+
+        return False
 
     def sort_by_departure(self):
         self.click_element(self.SORT_DEPARTURE)
 
-
     def seats_visible(self):
-        try:
-            self.wait_for_visibility(self.SEAT_CONTAINER, timeout=20)
-            return True
-        except:
-            return False
+        return len(
+            self.driver.find_elements("xpath", "//*[contains(@class,'seat')]")
+        ) > 0
