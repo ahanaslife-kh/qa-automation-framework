@@ -1,5 +1,6 @@
 from selenium.webdriver.common.by import By
-
+import time
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 
 from selenium.webdriver.support.ui import WebDriverWait
@@ -39,7 +40,7 @@ class HomePage(BasePage):
 
     ROOM_GUEST_BTN = (By.XPATH, "//p[@data-testid='adult-increment']")
 
-    SEARCH_BTN = (By.XPATH, "//div[@class='flex items-center gap-5 font-medium']")
+    SEARCH_BTN = ("xpath", "//button[@type='submit']")
 
     FROM_INPUT = (By.XPATH, "//input[contains(@placeholder,'From')]")
 
@@ -163,6 +164,41 @@ class HomePage(BasePage):
 
         raise Exception(f"Date not found: {target}")
 
+    def click_search(self):
+        self.logger.info("Clicking search button")
+
+        import time
+        time.sleep(2)
+
+        # Try multiple locators (robust approach)
+        locators = [
+            "//button[.//span[text()='Search']]",
+            "//button[contains(.,'Search')]",
+            "//div[contains(@role,'button') and contains(.,'Search')]",
+            "//span[text()='Search']/ancestor::button",
+            "//span[text()='Search']"
+        ]
+
+        for xpath in locators:
+            try:
+                elements = self.driver.find_elements("xpath", xpath)
+
+                for el in elements:
+                    if el.is_displayed():
+                        self.driver.execute_script(
+                            "arguments[0].scrollIntoView({block:'center'});", el
+                        )
+                        time.sleep(0.5)
+                        self.driver.execute_script("arguments[0].click();", el)
+
+                        self.logger.info(f"Search clicked using locator: {xpath}")
+                        return
+
+            except:
+                continue
+
+        raise Exception("Search button not found using any locator")
+
     def select_guests(self):
 
         self.logger.info("Selecting guests")
@@ -221,24 +257,45 @@ class HomePage(BasePage):
 
         raise Exception("City suggestion not clickable")
 
-    def enter_from_city(self, city):
+    from selenium.webdriver.common.keys import Keys
+    import time
 
-        self.select_city(self.FROM_INPUT, city)
+    def enter_from_city(self, city):
+        element = self.wait_for_visibility(self.FROM_INPUT)
+        element.clear()
+        element.send_keys(city)
+        time.sleep(2)
+        element.send_keys(Keys.ARROW_DOWN)
+        element.send_keys(Keys.ENTER)
 
     def enter_to_city(self, city):
+        element = self.wait_for_visibility(self.TO_INPUT)
 
-        self.select_city(self.TO_INPUT, city)
+        element.clear()
+        element.send_keys(city)
 
-    def click_search_generic(self):
+        time.sleep(2)
 
-        self.logger.info("Clicking generic search")
+        element.send_keys(Keys.ARROW_DOWN)
+        element.send_keys(Keys.ENTER)
 
-        self.remove_popup_overlay()
+def click_search_generic(self):
+    self.logger.info("Clicking search button")
 
-        btn = WebDriverWait(self.driver, 15).until(
+    import time
+    time.sleep(2)  # wait for UI validation
 
-            EC.element_to_be_clickable(self.SEARCH_BTN)
+    btn = WebDriverWait(self.driver, 20).until(
+        lambda d: d.find_element("xpath", "//button[@type='submit']")
+    )
 
-        )
+    # wait until button enabled
+    WebDriverWait(self.driver, 20).until(
+        lambda d: btn.is_enabled()
+    )
 
-        self.driver.execute_script("arguments[0].click();", btn)
+    self.driver.execute_script(
+        "arguments[0].scrollIntoView({block:'center'});", btn
+    )
+
+    self.driver.execute_script("arguments[0].click();", btn)
